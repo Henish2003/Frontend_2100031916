@@ -1,133 +1,124 @@
 <!DOCTYPE html>
 <html>
 <head>
-    <title>Interactive Data Table</title>
+    <title>Dynamic Form Builder</title>
     <style>
         body {
             font-family: Arial, sans-serif;
             margin: 20px;
         }
-        table {
-            width: 100%;
-            border-collapse: collapse;
+        .form-group {
+            margin-bottom: 10px;
+            padding: 10px;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            display: flex;
+            align-items: center;
+        }
+        .form-group input {
+            margin-right: 10px;
+        }
+        .form-group button {
+            margin-left: auto;
+            padding: 5px 10px;
+            background-color: #f44336;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+        }
+        .form-group button:hover {
+            background-color: #d32f2f;
+        }
+        .control-buttons {
             margin-bottom: 20px;
         }
-        th, td {
+        .control-buttons button {
+            padding: 10px 15px;
+            margin-right: 10px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            background-color: #4CAF50;
+            color: white;
+        }
+        .control-buttons button:hover {
+            background-color: #45a049;
+        }
+        #output {
+            margin-top: 20px;
             padding: 10px;
-            border: 1px solid #ddd;
-            text-align: left;
-        }
-        th {
-            cursor: pointer;
-            background-color: #f4f4f4;
-        }
-        th:hover {
-            background-color: #e2e2e2;
-        }
-        #filter-input {
-            margin-bottom: 10px;
-            padding: 8px;
-            width: 100%;
-            box-sizing: border-box;
-        }
-        .pagination {
-            text-align: center;
-        }
-        .pagination button {
-            padding: 5px 10px;
-            margin: 0 5px;
             border: 1px solid #ccc;
-            background-color: #f4f4f4;
-            cursor: pointer;
-        }
-        .pagination button:hover {
-            background-color: #e2e2e2;
+            border-radius: 5px;
         }
     </style>
 </head>
 <body>
-    <h1>Interactive Data Table</h1>
-    <input type="text" id="filter-input" placeholder="Filter rows..." oninput="filterTable()">
-    <table id="data-table">
-        <thead>
-            <tr>
-                <th onclick="sortTable(0)">Name</th>
-                <th onclick="sortTable(1)">Age</th>
-                <th onclick="sortTable(2)">Country</th>
-            </tr>
-        </thead>
-        <tbody id="table-body">
-        </tbody>
-    </table>
-    <div class="pagination" id="pagination-controls">
+    <h1>Dynamic Form Builder</h1>
+    <div class="control-buttons">
+        <button onclick="addFormField('text')">Add Text Input</button>
+        <button onclick="addFormField('checkbox')">Add Checkbox</button>
+        <button onclick="addFormField('radio')">Add Radio Button</button>
     </div>
+    <div id="form-container"></div>
+    <div id="output"></div>
 
     <script>
-        let data = [
-            {name: 'John Doe', age: 28, country: 'India'},
-            {name: 'Anna Smith', age: 24, country: 'UK'},
-            {name: 'Peter Jones', age: 35, country: 'USA'},
-        ];
-        let currentPage = 1;
-        let rowsPerPage = 5;
+        let formContainer = document.getElementById('form-container');
+        let output = document.getElementById('output');
+        let formData = [];
 
-        function generateTable() {
-            let tableBody = document.getElementById('table-body');
-            tableBody.innerHTML = '';
+        function addFormField(type) {
+            let formGroup = document.createElement('div');
+            formGroup.className = 'form-group';
 
-            let start = (currentPage - 1) * rowsPerPage;
-            let end = start + rowsPerPage;
-            let paginatedData = data.slice(start, end);
-
-            for (let row of paginatedData) {
-                let tr = document.createElement('tr');
-                tr.innerHTML = `<td>${row.name}</td><td>${row.age}</td><td>${row.country}</td>`;
-                tableBody.appendChild(tr);
+            switch(type) {
+                case 'text':
+                    let textInput = document.createElement('input');
+                    textInput.type = 'text';
+                    textInput.addEventListener('input', (e) => updateOutput(e, formGroup));
+                    formGroup.appendChild(textInput);
+                    break;
+                case 'checkbox':
+                    let checkboxInput = document.createElement('input');
+                    checkboxInput.type = 'checkbox';
+                    formGroup.appendChild(checkboxInput);
+                    break;
+                case 'radio':
+                    let radioInput = document.createElement('input');
+                    radioInput.type = 'radio';
+                    formGroup.appendChild(radioInput);
+                    break;
             }
 
-            generatePagination();
+            let removeButton = document.createElement('button');
+            removeButton.innerText = 'Remove';
+            removeButton.onclick = function() {
+                formContainer.removeChild(formGroup);
+                updateStoredData();
+            };
+            formGroup.appendChild(removeButton);
+
+            formContainer.appendChild(formGroup);
         }
 
-        function sortTable(columnIndex) {
-            data.sort((a, b) => {
-                let aValue = Object.values(a)[columnIndex].toString().toLowerCase();
-                let bValue = Object.values(b)[columnIndex].toString().toLowerCase();
-                if (aValue < bValue) return -1;
-                if (aValue > bValue) return 1;
-                return 0;
+        function updateOutput(event, formGroup) {
+            let input = event.target;
+            let value = input.value;
+
+            let index = Array.from(formContainer.children).indexOf(formGroup);
+            formData[index] = value;
+
+            output.innerHTML = formData.filter(v => v).join(', ');
+        }
+
+        function updateStoredData() {
+            formData = Array.from(formContainer.children).map(group => {
+                let input = group.querySelector('input[type="text"]');
+                return input ? input.value : '';
             });
-            generateTable();
+            output.innerHTML = formData.filter(v => v).join(', ');
         }
-
-        function filterTable() {
-            let filterInput = document.getElementById('filter-input').value.toLowerCase();
-            let filteredData = data.filter(row => 
-                Object.values(row).some(value => 
-                    value.toString().toLowerCase().includes(filterInput)
-                )
-            );
-            data = filteredData;
-            generateTable();
-        }
-
-        function generatePagination() {
-            let paginationControls = document.getElementById('pagination-controls');
-            paginationControls.innerHTML = '';
-
-            let totalPages = Math.ceil(data.length / rowsPerPage);
-
-            for (let i = 1; i <= totalPages; i++) {
-                let button = document.createElement('button');
-                button.innerText = i;
-                button.onclick = function() {
-                    currentPage = i;
-                    generateTable();
-                };
-                paginationControls.appendChild(button);
-            }
-        }
-
-        generateTable();
     </script>
 </body>
 </html>
